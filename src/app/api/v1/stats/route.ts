@@ -1,23 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createClient } from "@/src/utils/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const userId = request.headers.get("x-user-id");
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const supabaseServerClient = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServerClient
       .from("log_stats")
-      .select("*");
-    // Pagination 0-based index, inclusive of end
-    //   .range(0, 1)
+      .select("*")
+      .eq("userId", userId)
+      .order("processedAt", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

@@ -3,11 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   try {
-    // Create a response to modify
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-pathname", request.nextUrl.pathname);
-    let res = NextResponse.next({ request: { headers: requestHeaders } });
-
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,9 +15,7 @@ export async function middleware(request: NextRequest) {
             cookiesToSet.forEach(({ name, value, options }) =>
               request.cookies.set(name, value)
             );
-            res = NextResponse.next({
-              request,
-            });
+            const res = NextResponse.next();
             cookiesToSet.forEach(({ name, value, options }) =>
               res.cookies.set(name, value, options)
             );
@@ -49,21 +42,28 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
 
     // Protected routes that require authentication
-    const protectedRoutes = [
-      "/dashboard",
-      "/api/v1/*",
-    ];
-
-    const isProtectedRoute = protectedRoutes.some((route) =>
-      path.startsWith(route)
-    );
+    const isProtectedPage = path.startsWith("/dashboard");
+    const isProtectedApiRoute =
+      path.startsWith("/api/v1/") && !path.startsWith("/api/v1/auth");
 
     // Auth routes that should redirect to dashboard if already authenticated
     const authRoutes = ["/login", "/signup"];
     const isAuthRoute = authRoutes.some((route) => path.startsWith(route));
 
+    if (isProtectedApiRoute) {
+      if (!user) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-user-id", user.id);
+
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+    }
+
     // Handle protected routes
-    if (isProtectedRoute && !user) {
+    if (isProtectedPage && !user) {
       const redirectUrl = new URL("/login", request.url);
       return NextResponse.redirect(redirectUrl);
     }
@@ -74,7 +74,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    return res;
+    return NextResponse.next();
   } catch (error) {
     return NextResponse.next();
   }

@@ -1,22 +1,16 @@
-import { Server } from "socket.io";
+// socket.ts
+import { io, Socket } from "socket.io-client";
 
-let io: Server | null = null;
+const SOCKET_URL = "http://localhost:3000";
 
-export function getIO() {
-    if (!io) {
-        throw new Error("Socket.IO instance not initialized");
-    }
-    return io;
-}
+let socket: Socket;
 
-export function initIO(server: any) {
-    if (!io) {
-        io = new Server(server, {
-            cors: {
-                origin: "*",
-                methods: ["GET", "POST"]
-            }
-        });
-    }
-    return io;
-} 
+export const getSocket = () => {
+  if (!socket) {
+    socket = io(SOCKET_URL, {
+      autoConnect: true,
+      reconnection: true,
+    });
+  }
+  return socket;
+};

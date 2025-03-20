@@ -4,11 +4,10 @@ import fs from "fs";
 import path from "path";
 import readline from "readline";
 import { createClient } from "@supabase/supabase-js";
-import { getIO } from "../../utils/socket";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 // Redis connection configuration
@@ -29,51 +28,74 @@ const LOG_KEYWORDS = process.env.KEYWORDS?.split(",") || [
   "ERROR",
   "FAIL",
   "WARN",
-  "INFO"
+  "INFO",
 ];
 
 // Update processing status and notify clients
-const updateProcessingStatus = async (jobId: string, status: string) => {
+const updateProcessingStatus = async (
+  jobId: string,
+  status: string,
+  userId: string
+) => {
   try {
-    const io = getIO();
-
     await supabase
       .from("log_stats")
-      .update({ processing_status: status })
-      .eq("job_id", jobId);
+      .update({ processingStatus: status })
+      .eq("userId", userId)
+      .eq("jobId", jobId);
 
-    io.emit("job_progress", { jobId, status });
+    let result = await supabase
+      .from("log_stats")
+      .select("*")
+      .eq("userId", userId)
+      .eq("jobId", jobId);
+
+    await redisConnection.publish(
+      "job-progress-channel",
+      JSON.stringify({ result })
+    );
   } catch (error) {
     console.error(`Failed to update status for job ${jobId}:`, error);
   }
 };
 
-// Initialize worker
+let localFileDirectory: string;
+let localFilePath: string;
+
+// // Initialize worker
 const logWorker = new Worker(
   "log-processing",
   async (job: Job) => {
     const { id: jobId } = job;
+    const { fileId, filePath, filename, userId } = job.data;
 
     if (!jobId) {
       throw new Error("Job ID is not found");
     }
 
-    const { fileId, filePath, filename } = job.data;
-    console.log(`📝 Processing log file: ${filename}`);
+    if (!userId) {
+      throw new Error("User ID is not found in job data");
+    }
+
+    console.log(`Processing log file: ${filename} for user: ${userId}`);
 
     try {
-      await updateProcessingStatus(jobId, "processing");
-
       // Download file from Supabase
       const { data, error } = await supabase.storage
         .from("logs")
         .download(filePath);
-      
+
       if (error) {
         throw new Error(`Failed to download log file: ${error.message}`);
       }
 
-      const localFilePath = path.join(TEMP_DIR, filename);
+      localFileDirectory = path.join(TEMP_DIR, `${userId}`);
+      localFilePath = path.join(TEMP_DIR, filename);
+
+      if (!fs.existsSync(localFileDirectory)) {
+        fs.mkdirSync(localFileDirectory, { recursive: true });
+      }
+
       fs.writeFileSync(localFilePath, Buffer.from(await data.arrayBuffer()));
 
       // Process file
@@ -102,18 +124,18 @@ const logWorker = new Worker(
 
       // Clean up temp file
       fs.unlinkSync(localFilePath);
-      // fs.rmdirSync(TEMP_DIR);
 
       // Store results in Supabase
       const { error: insertError } = await supabase.from("log_stats").insert([
         {
+          userId,
           jobId,
           filename,
           errorCount,
           keywordCounts,
           uniqueIPs: Array.from(uniqueIPs),
           processedAt: new Date().toISOString(),
-          processingStatus: "Completed",
+          processingStatus: "processing",
         },
       ]);
 
@@ -121,11 +143,11 @@ const logWorker = new Worker(
         throw new Error(`Failed to insert log stats: ${insertError.message}`);
       }
 
-      await updateProcessingStatus(jobId, "completed");
-      console.log(`✅ Successfully processed log file: ${filename}`);
+      await updateProcessingStatus(jobId, "completed", userId);
+      console.log(`Successfully processed log file: ${filename}`);
     } catch (error) {
       console.error(`❌ Error processing job ${jobId}:`, error);
-      await updateProcessingStatus(jobId, "failed");
+      await updateProcessingStatus(jobId, "failed", userId);
       throw error;
     }
   },
@@ -143,7 +165,7 @@ logWorker.on("failed", async (job, err) => {
   }
 
   console.error(`❌ Job ${job.id} failed:`, err);
-  await updateProcessingStatus(job.id, "Failed");
+  await updateProcessingStatus(job.id, "Failed", "");
 });
 
 logWorker.on("error", (err) => {
@@ -151,8 +173,8 @@ logWorker.on("error", (err) => {
 });
 
 logWorker.on("completed", (job) => {
-  console.log(`✅ Job ${job.id} completed successfully`);
+  console.log(`Job ${job.id} completed successfully`);
 });
 
 // Start the worker
-console.log("👷 Log processing worker initialized");
+console.log("Log processing worker initialized");

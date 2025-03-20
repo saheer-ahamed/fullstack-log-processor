@@ -1,22 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
-import { createClient } from "@/src/utils/supabase/server";
 import { logProcessingQueue } from "@/src/utils/queue";
+import { createClient } from "@supabase/supabase-js";
 
 const TEMP_DIR = path.join(process.cwd(), "public/temp");
 const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB default
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check if user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+    const userId = request.headers.get("x-user-id");
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    
     const formData = await request.formData();
     const file = formData.get("file") as Blob | null;
     const filename = formData.get("filename") as string;
@@ -28,10 +23,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check file size limit
-    const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || DEFAULT_MAX_FILE_SIZE.toString());
+    const maxFileSize = parseInt(
+      process.env.MAX_FILE_SIZE || DEFAULT_MAX_FILE_SIZE.toString()
+    );
     if (file.size > maxFileSize) {
       return NextResponse.json(
-        { error: `File chunk size exceeds the maximum limit of ${maxFileSize / (1024 * 1024)}MB` },
+        {
+          error: `File chunk size exceeds the maximum limit of ${
+            maxFileSize / (1024 * 1024)
+          }MB`,
+        },
         { status: 400 }
       );
     }
@@ -62,7 +63,6 @@ export async function POST(request: NextRequest) {
         const chunkBuffer = fs.readFileSync(chunkPath);
         writeStream.write(chunkBuffer);
         fs.unlinkSync(chunkPath); // Remove chunk after merging
-
       }
       // fs.rmdirSync(TEMP_DIR);
 
@@ -74,20 +74,46 @@ export async function POST(request: NextRequest) {
       );
 
       // Upload to Supabase Storage
-      const supabasePath = `${filename}`;
       const fileData = fs.readFileSync(finalFilePath);
 
-      const { data, error } = await supabase.storage
+      const supabaseServerClient = createClient(
+        process.env.SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+
+      let fileExtension = filename.split(".").pop(); // Extract file extension
+      let fileNameWithoutExt = filename.replace(`.${fileExtension}`, ""); // Filename without extension
+      let supabasePath = `${filename}`;
+      let counter = 1;
+
+      // Check if the file already exists
+      const { data, error } = await supabaseServerClient.storage.from("logs").list(userId);
+
+      if (error) {
+        console.error("Error fetching file existence:", error.message);
+        return { success: false, error: error.message };
+      }
+
+      // Check if the file already exists
+      const existingFiles = data.map((file) => file.name);
+
+      while (existingFiles.includes(supabasePath)) {
+        supabasePath = `${fileNameWithoutExt} (${counter}).${fileExtension}`;
+        counter++;
+      }
+
+      supabasePath = `${userId}/${supabasePath}`;
+
+      const { data: uploadData, error: uploadError } = await supabaseServerClient.storage
         .from("logs")
-        .upload(supabasePath, fileData, { upsert: true });
+        .upload(supabasePath, fileData);
 
       // Remove the merged file after upload
       fs.unlinkSync(finalFilePath);
 
-      if (error) {
-        console.error("Supabase upload error:", error);
+      if (uploadError) {
         return NextResponse.json(
-          { error: "Failed to upload to Supabase" },
+          { error: "Failed to upload to Supabase. " + (uploadError.message || "") },
           { status: 500 }
         );
       }
@@ -96,7 +122,8 @@ export async function POST(request: NextRequest) {
       const job = await logProcessingQueue.add("process-log", {
         fileId: Date.now().toString(),
         filePath: supabasePath,
-        filename,
+        filename: supabasePath,
+        userId
       });
 
       return NextResponse.json({

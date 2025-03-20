@@ -47,8 +47,15 @@ const Header = () => {
                       width={32}
                       height={32}
                       className="size-8 rounded-full"
-                      src="/profile_icon_32x32.png"
-                      alt="Profile Placeholder"
+                      src={
+                        user?.user_metadata?.avatar_url ||
+                        "/profile_icon_32x32.png"
+                      }
+                      alt={
+                        user?.user_metadata?.avatar_url
+                          ? `${user?.user_metadata?.name} Profile`
+                          : "Profile Placeholder"
+                      }
                       sizes="32px"
                     />
                   </button>

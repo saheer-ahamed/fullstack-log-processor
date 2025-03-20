@@ -7,12 +7,7 @@ import CustomInput from "../common/customInput";
 import { useRouter } from "next/navigation";
 import CircularLoader from "../common/circularLoader";
 import isEmail from "validator/lib/isEmail";
-
-interface LoginFormValues {
-  email: string;
-  password: string;
-  globalError?: string;
-}
+import { LoginFormValues } from "@/src/types/ui";
 
 const Login = () => {
   const router = useRouter();

@@ -8,14 +8,7 @@ import { useRouter } from "next/navigation";
 import { toastMessage } from "@/src/utils/helper";
 import CircularLoader from "../common/circularLoader";
 import isEmail from "validator/lib/isEmail";
-
-interface SignupFormValues {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  globalError?: string;
-}
+import { SignupFormValues } from "@/src/types/ui";
 
 const Signup = () => {
   const router = useRouter();
