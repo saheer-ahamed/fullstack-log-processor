@@ -1,9 +1,8 @@
-import { signOut } from '@/src/utils/serverActions/auth'
-import { revalidatePath } from 'next/cache'
+import { signOut } from '../../utils/serverActions/auth'
 import { redirect } from 'next/navigation'
 
 const Logout = async () => {
-  await signOut()
+    await signOut()
   redirect('/login')
 }
 

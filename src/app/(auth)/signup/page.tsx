@@ -1,5 +1,5 @@
 import React from "react";
-import AuthComponent from "@/src/components/auth";
+import AuthComponent from "../../../components/auth";
 
 const SignupPage = async () => {
   return <AuthComponent type="signup" />

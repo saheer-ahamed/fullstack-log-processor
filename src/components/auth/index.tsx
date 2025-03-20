@@ -1,5 +1,5 @@
 import React from "react";
-import { signInWithGithub } from "@/src/utils/serverActions/auth";
+import { signInWithGithub } from "../../utils/serverActions/auth";
 import Link from "next/link";
 import Login from "./login";
 import Signup from "./signup";

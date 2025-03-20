@@ -46,12 +46,12 @@ export const handleUpload = async ({
   formData.append("totalChunks", Math.ceil(file.size / CHUNK_SIZE).toString());
 
   try {
-    let response = await fetch("/api/v1/upload-logs", {
+    const response = await fetch("/api/v1/upload-logs", {
       method: "POST",
       body: formData,
     });
 
-    let data = await response.json();
+    const data = await response.json();
 
     if (data.status === 200) {
       setFiles((prevFiles) =>
@@ -80,6 +80,6 @@ export const handleUpload = async ({
     }
   } catch (error) {
     setFiles((prevFiles) => prevFiles.filter((f) => f.fileId !== fileId));
-    console.error(`Upload error for ${file.name}:`, error);
+    toastMessage({message:`Upload error for ${file.name}`, type: "error"});
   }
 };

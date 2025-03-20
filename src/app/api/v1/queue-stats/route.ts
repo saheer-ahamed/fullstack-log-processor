@@ -1,7 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { logProcessingQueue } from "@/src/utils/queue";
+import { NextResponse } from "next/server";
+import { logProcessingQueue } from "../../../../utils/queue";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const jobCounts = await logProcessingQueue.getJobCounts();
     const isPaused = await logProcessingQueue.isPaused();
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error("Failed to fetch queue status:", error);
     return NextResponse.json(
       { error: "Failed to fetch queue status" },
       { status: 500 }

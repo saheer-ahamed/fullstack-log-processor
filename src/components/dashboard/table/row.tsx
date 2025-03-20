@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { LogStats } from "@/src/types/ui";
+import { LogStats } from "../../../types/ui";
 const TableRow = ({log, index, rowsLength}: {log: LogStats, index: number, rowsLength: number}) => {
   return (
     <tr

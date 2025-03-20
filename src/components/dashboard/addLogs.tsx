@@ -1,6 +1,6 @@
 "use client";
-import { FileDataType } from "@/src/types/ui";
-import { handleUpload } from "@/src/utils/helper";
+import { FileDataType } from "../../types/ui";
+import { handleUpload } from "../../utils/helper";
 import React, { useRef, useState } from "react";
 
 const CHUNK_SIZE = 5 * 1024 * 1024;
@@ -10,7 +10,7 @@ const AddLogs = () => {
   const [files, setFiles] = useState<FileDataType[]>([]); // Stores file states
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let selectedFiles = Array.from(e.target.files || []);
+    const selectedFiles = Array.from(e.target.files || []);
 
     if (selectedFiles.length === 0) return;
 

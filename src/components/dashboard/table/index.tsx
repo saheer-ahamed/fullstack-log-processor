@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import TableRow from "./row";
-import { api } from "@/src/utils/apiInterceptor";
+import { api } from "../../../utils/apiInterceptor";
 import CircularLoader from "../../common/circularLoader";
-// import PaginationComponent from "./pagination";
-import { LogStats } from "@/src/types/ui";
-import { getSocket } from "@/src/utils/socket";
-import { toastMessage } from "@/src/utils/helper";
+import { LogStats } from "../../../types/ui";
+import { getSocket } from "../../../utils/socket";
+import { toastMessage } from "../../../utils/helper";
 
 const TableReact = () => {
   const [logStats, setLogStats] = useState<LogStats[]>([]);
@@ -14,7 +13,7 @@ const TableReact = () => {
 
   const fetchLogStats = async () => {
     setLoading(true);
-    const { data, error } = await api.get<LogStats[]>("/api/v1/stats", {
+    const { data } = await api.get<LogStats[]>("/api/v1/stats", {
       showToast: false,
     });
 
@@ -30,7 +29,7 @@ const TableReact = () => {
     const socket = getSocket();
 
     socket.on("job-progress", (data: { result: { data: LogStats[] } }) => {
-      let updatedData = data.result.data[0];
+      const updatedData = data.result.data[0];
 
       setLogStats((prevLogStats) => {
         const existingIndex = prevLogStats.findIndex(

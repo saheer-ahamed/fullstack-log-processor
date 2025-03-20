@@ -12,30 +12,34 @@ export const signUp = async ({
   password: string;
   name: string;
 }) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: "http://localhost:3000/dashboard",
-      data: {
-        name,
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: "http://localhost:3000/dashboard",
+        data: {
+          name,
+        },
       },
-    },
-  });
+    });
 
-  let response: {
-    data: User | null;
-    errorMessage: string | null;
-  } = {
-    data: null,
-    errorMessage: null,
-  };
+    const response: {
+      data: User | null;
+      errorMessage: string | null;
+    } = {
+      data: null,
+      errorMessage: null,
+    };
 
-  if (error) response.errorMessage = error.message;
-  if (data) response.data = data.user ?? null;
+    if (error) response.errorMessage = error.message;
+    if (data) response.data = data.user ?? null;
 
-  return response;
+    return response;
+  } catch (err) {
+    return { data: null, errorMessage: "An unexpected error occurred." };
+  }
 };
 
 export const login = async ({
@@ -45,50 +49,65 @@ export const login = async ({
   email: string;
   password: string;
 }) => {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+    const response: {
+      data: User | null;
+      errorMessage: string | null;
+    } = {
+      data: null,
+      errorMessage: null,
+    };
 
-  let response: {
-    data: User | null;
-    errorMessage: string | null;
-  } = {
-    data: null,
-    errorMessage: null,
-  };
+    if (error?.code === "invalid_credentials") {
+      response.errorMessage = "Invalid Credentials";
+    } else if (error?.code === "email_not_confirmed") {
+      response.errorMessage = "Email not confirmed. Please check your email.";
+    } else if (error?.status === 400) {
+      response.errorMessage = "Something went wrong. Please try again.";
+    }
 
-  if (error?.code === "invalid_credentials") {
-    response.errorMessage = "Invalid Credentials";
-  } else if (error?.code === "email_not_confirmed") {
-    response.errorMessage = "Email not confirmed. Please check your email.";
-  } else if (error?.status === 400) {
-    response.errorMessage = "Something went wrong. Please try again.";
+    if (data) response.data = data.user ?? null;
+    return response;
+  } catch (err) {
+    return { data: null, errorMessage: "An unexpected error occurred." };
   }
-
-  if (data) response.data = data.user ?? null;
-  
-  return response;
 };
 
 export const signInWithGithub = async () => {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "github",
-    options: {
-      redirectTo: `http://localhost:3000/api/v1/auth/github`,
-    },
-  });
-  if (error) throw error;
-  if (data.url) {
-    redirect(data.url) // use the redirect API for your server framework
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `http://localhost:3000/api/v1/auth/github`,
+      },
+    });
+    console.log("ok")
+    if (error) {
+      console.log("error == ", error)
+      throw error;
+    }
+
+    if (data.url) {
+      redirect(data.url);
+    }
+  } catch (err) {
+    console.error("GitHub Sign-in Error:", err);
   }
 };
 
 export const signOut = async () => {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  } catch (err) {
+    console.error("Sign-out Error:", err);
+  }
 };

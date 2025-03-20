@@ -12,7 +12,7 @@ const supabase = createClient(
 
 // Redis connection configuration
 const redisConnection = new Redis({
-  host: process.env.REDIS_HOST || "localhost",
+  host: process.env.REDIS_HOST || "redis",
   port: Number(process.env.REDIS_PORT || "6379"),
   maxRetriesPerRequest: null,
 });
@@ -44,7 +44,7 @@ const updateProcessingStatus = async (
       .eq("userId", userId)
       .eq("jobId", jobId);
 
-    let result = await supabase
+    const result = await supabase
       .from("log_stats")
       .select("*")
       .eq("userId", userId)
@@ -67,7 +67,7 @@ const logWorker = new Worker(
   "log-processing",
   async (job: Job) => {
     const { id: jobId } = job;
-    const { fileId, filePath, filename, userId } = job.data;
+    const { filePath, filename, userId } = job.data;
 
     if (!jobId) {
       throw new Error("Job ID is not found");
@@ -106,8 +106,8 @@ const logWorker = new Worker(
       });
 
       let errorCount = 0;
-      let keywordCounts: Record<string, number> = {};
-      let uniqueIPs = new Set<string>();
+      const keywordCounts: Record<string, number> = {};
+      const uniqueIPs = new Set<string>();
 
       for await (const line of rl) {
         LOG_KEYWORDS.forEach((keyword) => {
@@ -144,9 +144,7 @@ const logWorker = new Worker(
       }
 
       await updateProcessingStatus(jobId, "completed", userId);
-      console.log(`Successfully processed log file: ${filename}`);
     } catch (error) {
-      console.error(`❌ Error processing job ${jobId}:`, error);
       await updateProcessingStatus(jobId, "failed", userId);
       throw error;
     }
@@ -164,7 +162,7 @@ logWorker.on("failed", async (job, err) => {
     return;
   }
 
-  console.error(`❌ Job ${job.id} failed:`, err);
+  console.error(`Job ${job.id} failed:`, err);
   await updateProcessingStatus(job.id, "Failed", "");
 });
 

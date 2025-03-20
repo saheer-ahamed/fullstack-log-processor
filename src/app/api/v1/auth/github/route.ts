@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/src/utils/supabase/server";
+import { createClient } from "../../../../../utils/supabase/server";
 
 export async function GET(request: Request) {
   try {
+    console.log("hier")
     const { searchParams, origin } = new URL(request.url);
 
     const code = searchParams.get("code");
@@ -10,13 +11,12 @@ export async function GET(request: Request) {
 
     if (code) {
       const supabase = await createClient();
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!error) {
-        const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
+        const forwardedHost = request.headers.get("x-forwarded-host"); 
         const isLocalEnv = process.env.NODE_ENV === "development";
         if (isLocalEnv) {
-          // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
           return NextResponse.redirect(`${origin}${next}`);
         } else if (forwardedHost) {
           return NextResponse.redirect(`https://${forwardedHost}${next}`);
@@ -27,6 +27,8 @@ export async function GET(request: Request) {
     }
     return NextResponse.redirect(`${origin}/login`);
   } catch (error) {
+    console.log("erro = ", error)
+    const { origin } = new URL(request.url);
     return NextResponse.redirect(`${origin}/login`);
   }
 }

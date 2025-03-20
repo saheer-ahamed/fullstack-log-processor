@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
-import { logProcessingQueue } from "@/src/utils/queue";
+import { logProcessingQueue } from "../../../../utils/queue";
 import { createClient } from "@supabase/supabase-js";
 
 const TEMP_DIR = path.join(process.cwd(), "public/temp");
@@ -10,8 +10,9 @@ const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB default
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
+    if (!userId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const formData = await request.formData();
     const file = formData.get("file") as Blob | null;
     const filename = formData.get("filename") as string;
@@ -64,7 +65,6 @@ export async function POST(request: NextRequest) {
         writeStream.write(chunkBuffer);
         fs.unlinkSync(chunkPath); // Remove chunk after merging
       }
-      // fs.rmdirSync(TEMP_DIR);
 
       writeStream.end();
 
@@ -81,17 +81,18 @@ export async function POST(request: NextRequest) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      let fileExtension = filename.split(".").pop(); // Extract file extension
-      let fileNameWithoutExt = filename.replace(`.${fileExtension}`, ""); // Filename without extension
+      const fileExtension = filename.split(".").pop(); // Extract file extension
+      const fileNameWithoutExt = filename.replace(`.${fileExtension}`, ""); // Filename without extension
       let supabasePath = `${filename}`;
       let counter = 1;
 
       // Check if the file already exists
-      const { data, error } = await supabaseServerClient.storage.from("logs").list(userId);
+      const { data, error } = await supabaseServerClient.storage
+        .from("logs")
+        .list(userId);
 
       if (error) {
-        console.error("Error fetching file existence:", error.message);
-        return { success: false, error: error.message };
+        return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
       // Check if the file already exists
@@ -104,16 +105,20 @@ export async function POST(request: NextRequest) {
 
       supabasePath = `${userId}/${supabasePath}`;
 
-      const { data: uploadData, error: uploadError } = await supabaseServerClient.storage
-        .from("logs")
-        .upload(supabasePath, fileData);
+      const { error: uploadError } =
+        await supabaseServerClient.storage
+          .from("logs")
+          .upload(supabasePath, fileData);
 
       // Remove the merged file after upload
       fs.unlinkSync(finalFilePath);
 
       if (uploadError) {
         return NextResponse.json(
-          { error: "Failed to upload to Supabase. " + (uploadError.message || "") },
+          {
+            error:
+              "Failed to upload to Supabase. " + (uploadError.message || ""),
+          },
           { status: 500 }
         );
       }
@@ -123,7 +128,7 @@ export async function POST(request: NextRequest) {
         fileId: Date.now().toString(),
         filePath: supabasePath,
         filename: supabasePath,
-        userId
+        userId,
       });
 
       return NextResponse.json({
@@ -135,7 +140,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: "Chunk received", status: 200 });
   } catch (error) {
-    console.error("Upload endpoint error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

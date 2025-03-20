@@ -1,13 +1,13 @@
 "use client";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { useFormik } from "formik";
-import { login } from "@/src/utils/serverActions/auth";
+import { login } from "../../utils/serverActions/auth";
 import { UserContext } from "../context";
 import CustomInput from "../common/customInput";
 import { useRouter } from "next/navigation";
 import CircularLoader from "../common/circularLoader";
 import isEmail from "validator/lib/isEmail";
-import { LoginFormValues } from "@/src/types/ui";
+import { LoginFormValues } from "../../types/ui";
 
 const Login = () => {
   const router = useRouter();
@@ -21,7 +21,8 @@ const Login = () => {
       password: "",
     },
     onSubmit: async (values) => {
-      let errors: { email?: string; password?: string; globalError?: string } = {};
+      const errors: { email?: string; password?: string; globalError?: string } =
+        {};
 
       if (!values.email) {
         errors.email = "Email is required";
@@ -36,7 +37,7 @@ const Login = () => {
         loginFormik.setErrors(errors);
       } else {
         try {
-          let response = await login({
+          const response = await login({
             email: values.email,
             password: values.password,
           });
@@ -49,7 +50,9 @@ const Login = () => {
             loginFormik.setSubmitting(false);
           }
         } catch (error) {
-          console.error("Error logging in:", error);
+          errors.globalError = "Something went wrong. Please try again.";
+          loginFormik.setErrors(errors);
+          loginFormik.setSubmitting(false);
         }
       }
     },
@@ -63,7 +66,11 @@ const Login = () => {
         placeholder="Email"
         value={loginFormik.values.email}
         onChange={loginFormik.handleChange}
-        className={loginFormik.errors.email || loginFormik.errors?.globalError ? "border-red-500 focus:border-red-500" : ""}
+        className={
+          loginFormik.errors.email || loginFormik.errors?.globalError
+            ? "border-red-500 focus:border-red-500"
+            : ""
+        }
       />
       {loginFormik.errors.email && (
         <p className="text-red-500 text-sm">{loginFormik.errors.email}</p>
@@ -74,7 +81,11 @@ const Login = () => {
         placeholder="Password"
         value={loginFormik.values.password}
         onChange={loginFormik.handleChange}
-        className={loginFormik.errors.password || loginFormik.errors?.globalError ? "border-red-500 focus:border-red-500" : ""}
+        className={
+          loginFormik.errors.password || loginFormik.errors?.globalError
+            ? "border-red-500 focus:border-red-500"
+            : ""
+        }
       />
       {loginFormik.errors.password && (
         <p className="text-red-500 text-sm">{loginFormik.errors.password}</p>

@@ -1,5 +1,5 @@
 import { toast } from 'react-hot-toast';
-import { ApiResponse, RequestOptions } from '@/src/types/api';
+import { ApiResponse, RequestOptions } from '../types/api';
 class ApiError extends Error {
   constructor(
     public status: number,

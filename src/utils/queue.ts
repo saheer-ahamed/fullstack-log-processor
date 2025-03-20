@@ -3,7 +3,7 @@ import { Redis } from 'ioredis';
 
 // Redis connection configuration
 const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
+  host: process.env.REDIS_HOST || 'redis',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   maxRetriesPerRequest: null,
 });

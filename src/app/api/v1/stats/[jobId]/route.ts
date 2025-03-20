@@ -28,7 +28,6 @@ export async function GET(
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error("Upload endpoint error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

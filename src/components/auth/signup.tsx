@@ -1,14 +1,14 @@
 "use client";
-import React, { useContext } from "react";
+import React from "react";
 import { useFormik } from "formik";
-import { signUp } from "@/src/utils/serverActions/auth";
-import { UserContext, useUser } from "../context";
+import { signUp } from "../../utils/serverActions/auth";
+import { useUser } from "../context";
 import CustomInput from "../common/customInput";
 import { useRouter } from "next/navigation";
-import { toastMessage } from "@/src/utils/helper";
+import { toastMessage } from "../../utils/helper";
 import CircularLoader from "../common/circularLoader";
 import isEmail from "validator/lib/isEmail";
-import { SignupFormValues } from "@/src/types/ui";
+import { SignupFormValues } from "../../types/ui";
 
 const Signup = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ const Signup = () => {
       confirmPassword: "",
     },
     onSubmit: async (values) => {
-      let errors: {
+      const errors: {
         name?: string;
         email?: string;
         password?: string;
@@ -56,7 +56,7 @@ const Signup = () => {
         signUpFormik.setErrors(errors);
       } else {
         try {
-          let response = await signUp({
+          const response = await signUp({
             email: values.email,
             password: values.password,
             name: values.name,

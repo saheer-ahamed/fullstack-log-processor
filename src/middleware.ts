@@ -35,14 +35,13 @@ export async function middleware(request: NextRequest) {
       error,
     } = await supabase.auth.getUser();
 
-    // // Log session and any errors
-    // if (error) console.error("Session error:", error);
-
     // Get the pathname
     const path = request.nextUrl.pathname;
 
-    // Protected routes that require authentication
+    // Protected pages that require authentication
     const isProtectedPage = path.startsWith("/dashboard");
+    
+    // Protected routes that require authentication
     const isProtectedApiRoute =
       path.startsWith("/api/v1/") && !path.startsWith("/api/v1/auth");
 
@@ -62,13 +61,11 @@ export async function middleware(request: NextRequest) {
       });
     }
 
-    // Handle protected routes
     if (isProtectedPage && !user) {
       const redirectUrl = new URL("/login", request.url);
       return NextResponse.redirect(redirectUrl);
     }
 
-    // Handle auth routes
     if (isAuthRoute && user) {
       const redirectUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(redirectUrl);
