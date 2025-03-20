@@ -156,10 +156,6 @@ CREATE TABLE public.log_stats (
 );
 ```
 
----
-
-## 📜 SUPABASE TABLE SCHEMA (log_stats)
-
 ### **Column Descriptions**
 
 | Column Name       | Data Type   | Constraints |
@@ -189,6 +185,11 @@ CREATE TABLE public.log_stats (
 | `POST` | `/api/v1/upload-logs`     | Upload logs        |
 | `GET`  | `/api/v1/queue-stats`     | Get queue stats    |
 | `GET`  | `/api/v1/stats/:jobId`    | Get job details    |
+
+---
+
+## Provided Sample Log file (10 MB around)
+- sample_log_file_10MB.log
 
 ---
 
