@@ -3,7 +3,6 @@ import { createClient } from "../../../../../utils/supabase/server";
 
 export async function GET(request: Request) {
   try {
-    console.log("hier")
     const { searchParams, origin } = new URL(request.url);
 
     const code = searchParams.get("code");
@@ -27,7 +26,6 @@ export async function GET(request: Request) {
     }
     return NextResponse.redirect(`${origin}/login`);
   } catch (error) {
-    console.log("erro = ", error)
     const { origin } = new URL(request.url);
     return NextResponse.redirect(`${origin}/login`);
   }

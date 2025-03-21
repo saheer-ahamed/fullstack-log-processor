@@ -70,11 +70,13 @@ const logWorker = new Worker(
     const { filePath, filename, userId } = job.data;
 
     if (!jobId) {
-      throw new Error("Job ID is not found");
+      console.error("Job ID is not found");
+      return
     }
 
     if (!userId) {
-      throw new Error("User ID is not found in job data");
+      console.error("User ID is not found in job data");
+      return;
     }
 
     console.log(`Processing log file: ${filename} for user: ${userId}`);
@@ -146,7 +148,7 @@ const logWorker = new Worker(
       await updateProcessingStatus(jobId, "completed", userId);
     } catch (error) {
       await updateProcessingStatus(jobId, "failed", userId);
-      throw error;
+      return;
     }
   },
   {

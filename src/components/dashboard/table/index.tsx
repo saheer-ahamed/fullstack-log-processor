@@ -29,28 +29,29 @@ const TableReact = () => {
     const socket = getSocket();
 
     socket.on("job-progress", (data: { result: { data: LogStats[] } }) => {
-      const updatedData = data.result.data[0];
-
-      setLogStats((prevLogStats) => {
-        const existingIndex = prevLogStats.findIndex(
-          (item) => item.jobId === updatedData.jobId
-        );
-
-        if (existingIndex !== -1) {
-          const updatedLogStats = [...prevLogStats];
-          updatedLogStats[existingIndex] = updatedData;
-          return updatedLogStats;
-        } else {
-          return [updatedData, ...prevLogStats];
-        }
-      });
-
-      setTimeout(() => {
-        toastMessage({
-          message: `Log stats updated for job: ${updatedData.jobId}`,
-          type: "success",
+      const updatedData = data?.result?.data?.[0];
+      if (updatedData && updatedData.jobId) {
+        setLogStats((prevLogStats) => {
+          const existingIndex = prevLogStats.findIndex(
+            (item) => item.jobId === updatedData.jobId
+          );
+  
+          if (existingIndex !== -1) {
+            const updatedLogStats = [...prevLogStats];
+            updatedLogStats[existingIndex] = updatedData;
+            return updatedLogStats;
+          } else {
+            return [updatedData, ...prevLogStats];
+          }
         });
-      }, 100);
+  
+        setTimeout(() => {
+          toastMessage({
+            message: `Log stats updated for job: ${updatedData.jobId}`,
+            type: "success",
+          });
+        }, 100);
+      }
     });
 
     return () => {

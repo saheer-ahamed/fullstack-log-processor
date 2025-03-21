@@ -1,13 +1,13 @@
 "use client";
 import { FileDataType } from "../../types/ui";
-import { handleUpload } from "../../utils/helper";
-import React, { useRef, useState } from "react";
+import { handleUpload, toastMessage } from "../../utils/helper";
+import React, { useEffect, useRef, useState } from "react";
 
 const CHUNK_SIZE = 5 * 1024 * 1024;
 
 const AddLogs = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<FileDataType[]>([]); // Stores file states
+  const [files, setFiles] = useState<FileDataType[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -22,7 +22,7 @@ const AddLogs = () => {
       fileId:
         Date.now().toString() + Math.random().toString(36).substring(2, 9),
       uploadedChunks: 0,
-      progress: 0
+      progress: 0,
     }));
 
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
@@ -36,6 +36,13 @@ const AddLogs = () => {
       })
     );
   };
+
+  useEffect(() => {
+    if (files.length && files.every((file) => file.progress === 100)) {
+      setFiles([])
+      toastMessage({message: "Files uploading completed.", type: "success"})
+    };
+  }, [files]);
 
   return (
     <div>

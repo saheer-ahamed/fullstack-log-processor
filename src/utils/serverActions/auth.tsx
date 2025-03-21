@@ -88,17 +88,12 @@ export const signInWithGithub = async () => {
         redirectTo: `http://localhost:3000/api/v1/auth/github`,
       },
     });
-    console.log("ok")
-    if (error) {
-      console.log("error == ", error)
-      throw error;
-    }
+   
+    if (error) throw error;
 
-    if (data.url) {
-      redirect(data.url);
-    }
+    if (data.url) redirect(data.url);
   } catch (err) {
-    console.error("GitHub Sign-in Error:", err);
+    throw err
   }
 };
 

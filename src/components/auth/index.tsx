@@ -1,14 +1,24 @@
+"use client"
 import React from "react";
 import { signInWithGithub } from "../../utils/serverActions/auth";
 import Link from "next/link";
 import Login from "./login";
 import Signup from "./signup";
+import { toastMessage } from "../../utils/helper";
 
 const AuthComponent = ({
   type,
 }: {
   type: "login" | "signup";
 }) => {
+
+  const handleGithubSignin = async () => {
+    try {
+      await signInWithGithub().catch(e => toastMessage({message: "Github Signin error. Please try again later.", type: "error"}))
+    } catch (error) {
+      toastMessage({message: "Github Signin error. Please try again later.", type: "error"})
+    }
+  }
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
       <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
@@ -20,7 +30,7 @@ const AuthComponent = ({
             <div className="w-full flex-1 mt-8">
               <div className="flex flex-col items-center">
                 <button
-                  onClick={signInWithGithub}
+                  onClick={handleGithubSignin}
                   className="cursor-pointer w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow hover:bg-indigo-200 focus:shadow-sm focus:shadow-outline mt-5"
                 >
                   <div className="bg-white p-1 rounded-full">

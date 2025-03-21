@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { logProcessingQueue } from "../../../../utils/queue";
 import { createClient } from "@supabase/supabase-js";
+import {v4 as uuidv4 } from "uuid"
 
 const TEMP_DIR = path.join(process.cwd(), "public/temp");
 const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB default
@@ -129,6 +130,8 @@ export async function POST(request: NextRequest) {
         filePath: supabasePath,
         filename: supabasePath,
         userId,
+      }, {
+        jobId: uuidv4(),
       });
 
       return NextResponse.json({
